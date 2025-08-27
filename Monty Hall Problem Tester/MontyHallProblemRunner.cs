@@ -2,14 +2,17 @@ namespace Monty_Hall_Problem_Tester;
 
 public class MontyHallProblemRunner
 {
-    private const int rounds = 1;
+    private const int rounds = 10000;
     
-    public void Run()
+    
+    public void Run(bool quietLogging)
     {
         for (int i = 0; i < rounds; i++)
         {
-            RunOnce(i+1);
+            RunOnce(i+1, quietLogging);
         }
+
+        CalculateResults();
     }
 
     struct RoundResult
@@ -32,40 +35,72 @@ public class MontyHallProblemRunner
         public Door HostOpenedDoor { get; }
     }
 
-
-    private void RunOnce(int n)
+    private void CalculateResults()
     {
-        Console.WriteLine($"Starting round #{n}...");
-        var round = new GameRound();
+        var numberOfTimePlayerChangedDoor = _roundResults.Count(r => r.PlayerChangedDoor);
+        var numberOfTimePlayerWon = _roundResults.Count(r => r.PlayerWon);
+        var numberOfTimesPlayerChangedDoorAndWon = _roundResults.Count(r => r.PlayerChangedDoor && r.PlayerWon);
+        var numberOfTimesPlayerDidNotChangeDoorAndWon = _roundResults.Count(r => !r.PlayerChangedDoor && r.PlayerWon);
+        var numberOfTimesPlayerDidNotChangeDoorAndLost = _roundResults.Count(r => !r.PlayerChangedDoor && !r.PlayerWon);
+        var numberOfTimesPlayerChangedDoorAndLost = _roundResults.Count(r => r.PlayerChangedDoor && !r.PlayerWon);
+        var totalRounds = _roundResults.Count;
         
-        LogStatus(round);
+        var percentTimesPlayerChangedDoorAndWon = (double)numberOfTimesPlayerChangedDoorAndWon / (double)totalRounds;
+        var percentTimesPlayerChangedDoorAndLost = (double)numberOfTimesPlayerChangedDoorAndLost / (double)totalRounds;
+        var percentTimesPlayerDidNotChangeDoorAndWon = (double)numberOfTimesPlayerDidNotChangeDoorAndWon / (double)totalRounds;
+        var percentTimesPlayerDidNotChangeDoorAndLost = (double)numberOfTimesPlayerDidNotChangeDoorAndLost / (double)totalRounds;
+        
+        
+        Console.WriteLine("*************************************************************************");
+        Console.WriteLine();
+        Console.WriteLine(" Results: ");
+        Console.WriteLine($"   Rounds: {totalRounds}");
+        Console.WriteLine($"   Player Changed Door: {numberOfTimePlayerChangedDoor}");
+        Console.WriteLine($"   Player Won: {numberOfTimePlayerWon}");
+        Console.WriteLine($"   Player Changed Door And Won: {numberOfTimesPlayerChangedDoorAndWon} - {percentTimesPlayerChangedDoorAndWon:P0}");
+        Console.WriteLine($"   Player Changed Door And Lost: {numberOfTimesPlayerChangedDoorAndLost} - {percentTimesPlayerChangedDoorAndLost:P0}");
+        Console.WriteLine($"   Player Did Not Change Door And Won: {numberOfTimesPlayerDidNotChangeDoorAndWon} - {percentTimesPlayerDidNotChangeDoorAndWon:P0}");
+        Console.WriteLine($"   Player Did Not Change Door And Lost: {numberOfTimesPlayerDidNotChangeDoorAndLost} - {percentTimesPlayerDidNotChangeDoorAndLost:P0}");
+                
+        
+    }
+
+
+    private void RunOnce(int n, bool quietLogging)
+    {
+        if(!quietLogging) Console.WriteLine($"Starting round #{n}...");
+        var round = new GameRound(quietLogging);
+        
+        if(!quietLogging)  LogStatus(round);
 
         var playerPickedDoorInitial = Picker.PickADoor();
         round.StepOne_PlayerPickADoor(playerPickedDoorInitial);
-        Console.WriteLine($"Step 1 - Player picks door {playerPickedDoorInitial.ToText()}");
+        if(!quietLogging) Console.WriteLine($"Step 1 - Player picks door {playerPickedDoorInitial.ToText()}");
         
-        LogStatus(round);
+        if(!quietLogging) LogStatus(round);
         
         var hostPickedDoorStep2 = round.StepTwo_HostOpenLosingDoor();
         
-        Console.WriteLine($"Step 2 - Host picks door {hostPickedDoorStep2.ToText()}");
+        if(!quietLogging) Console.WriteLine($"Step 2 - Host picks door {hostPickedDoorStep2.ToText()}");
         
-        LogStatus(round);
+        if(!quietLogging) LogStatus(round);
 
         var playerDecidesToChangeDoor = Picker.YesOrNo();
         var playerPickedStep3 = round.StepThree_PlayerSelectsCurrentOrOtherDoor(playerDecidesToChangeDoor);
         
-        Console.WriteLine($"Step 3 - Player picked door {playerPickedStep3.ToText()}");
+        if(!quietLogging) Console.WriteLine($"Step 3 - Player picked door {playerPickedStep3.ToText()}");
         
-        LogStatus(round);
+        if(!quietLogging) LogStatus(round);
 
         var playerWon = round.StepFour_OpenPlayerSelectedDoor();
         string playerText = playerWon ? "won" : "lost";
-        Console.WriteLine($"Step 4 - Player {playerText}");
+        if(!quietLogging) Console.WriteLine($"Step 4 - Player {playerText}");
         
         var roundStat = new RoundResult(playerDecidesToChangeDoor, playerWon, round.GetWinningDoor(), playerPickedDoorInitial, playerPickedStep3, hostPickedDoorStep2 );
-        
+        _roundResults.Add(roundStat);
     }
+    
+    private List<RoundResult> _roundResults = new List<RoundResult>();
 
     public static void LogStatus(GameRound round)
     {

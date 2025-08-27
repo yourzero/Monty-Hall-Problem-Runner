@@ -6,11 +6,13 @@ namespace Monty_Hall_Problem_Tester
 {
     public class GameRound
     {
+        private readonly bool _quietLogging;
         public Dictionary<Door, DoorStatus> Doors = new Dictionary<Door, DoorStatus>(3);
         private DoorStatus hostDoorStatus;
 
-        public GameRound()
+        public GameRound(bool quietLogging)
         {
+            _quietLogging = quietLogging;
             var prizeDoor = Picker.PickADoor();
             foreach (Door door in Enum.GetValuesAsUnderlyingType<Door>())
             {
@@ -39,7 +41,7 @@ namespace Monty_Hall_Problem_Tester
             if (PlayerSelectedDoors.Any()) throw new Exception("Player Selected Doors already contains selections!");
             PlayerSelectedDoors.Add(selectedDoor);
             Doors[selectedDoor].DoorPickedState = DoorPickedState.PickedByPlayer;
-            Console.WriteLine($"Step 1: Player has selected door => {selectedDoor.ToText()} <=");
+            if(!_quietLogging) Console.WriteLine($"Step 1: Player has selected door => {selectedDoor.ToText()} <=");
         }
 
         public Door StepTwo_HostOpenLosingDoor()
@@ -53,7 +55,7 @@ namespace Monty_Hall_Problem_Tester
             (hostDoorStatus.DoorPickedState, hostDoorStatus.DoorKnowledge, hostDoorStatus.DoorOpenState) =
                 (DoorPickedState.PickedByHost, DoorKnowledge.KnownLoser, DoorOpenState.Opened);
 
-            Console.WriteLine($"Step 2: Host has opened unwinning door => {hostPickedDoor.ToText()} <=");
+            if(!_quietLogging) Console.WriteLine($"Step 2: Host has opened unwinning door => {hostPickedDoor.ToText()} <=");
             return hostPickedDoor;
         }
 
@@ -76,13 +78,13 @@ namespace Monty_Hall_Problem_Tester
                 doorSelectedByPlayer = doorToChangeTo.Door;
                 PlayerSelectedDoors.Add(doorSelectedByPlayer);
 
-                Console.WriteLine(
+                if(!_quietLogging) Console.WriteLine(
                     $"Step 3: Player has opted to switch their picked door to {doorToChangeTo.Door.ToText()} => {doorChangedFrom.Door.ToText()} <=");
             }
             else
             {
                 doorSelectedByPlayer = doorChangedFrom.Door;
-                Console.WriteLine(
+                if(!_quietLogging) Console.WriteLine(
                     $"Step 3: Player has opted to not switch their picked door: => {doorChangedFrom.Door.ToText()} <=");
             }
 
@@ -100,7 +102,7 @@ namespace Monty_Hall_Problem_Tester
 
             var didPlayerWin = (GetWinningDoor() == playerDoor.Door);
             var playerWinText = didPlayerWin ? "WINNER!" : "loser";
-            Console.WriteLine($"Drumroll... opening the player's selected door => {playerDoor.Door.ToText()} <= ... {playerWinText}");
+            if(!_quietLogging) Console.WriteLine($"Drumroll... opening the player's selected door => {playerDoor.Door.ToText()} <= ... {playerWinText}");
             return didPlayerWin;
         }
 
@@ -128,7 +130,7 @@ namespace Monty_Hall_Problem_Tester
                 spaceBetweenDoorsAndStatus: spaceBetweenDoorsAndStatus
             );
 
-            Console.WriteLine(text);
+            if(!_quietLogging) Console.WriteLine(text);
         }
 
         // (helper)

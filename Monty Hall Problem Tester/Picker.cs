@@ -13,7 +13,7 @@ public static class Picker
     {
         var d= doors[_rnd.Next(0, doors.Length)];
         var doorChoicesText = doors.Select(d => d.ToString());
-        Console.WriteLine($"  Picked door => {d} <= - from {string.Join(",",doorChoicesText)}");
+        //Console.WriteLine($"  Picked door => {d} <= - from {string.Join(",",doorChoicesText)}");
         return d;
     }
 
