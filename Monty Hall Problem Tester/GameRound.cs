@@ -44,7 +44,7 @@ public class GameRound
 
     private List<DoorStatus> GetUnopenedDoors()
     {
-        return Doors.Where(kv => kv.Value.DoorOpenState != DoorOpenState.Unopened).Select(kv => kv.Value)
+        return Doors.Where(kv => kv.Value.DoorOpenState == DoorOpenState.Unopened).Select(kv => kv.Value)
             .ToList();
     }
 
@@ -94,7 +94,7 @@ public class GameRound
             var doorToChangeTo = unopenedDoors.Where(d => d.DoorPickedState != DoorPickedState.PickedByPlayer).Single();
 
             doorToChangeTo.DoorPickedState = DoorPickedState.PickedByPlayer;
-            doorChangedFrom.DoorPickedState = DoorPickedState.PickedByPlayer;
+            doorChangedFrom.DoorPickedState = DoorPickedState.Unpicked;
 
             doorSelectedByPlayer = doorToChangeTo.Door;
             PlayerSelectedDoors.Add(doorSelectedByPlayer);
@@ -135,6 +135,33 @@ public class GameRound
     {
         return unopenedDoors.Where(d => d.DoorPickedState == DoorPickedState.PickedByPlayer).Single();
     }
+    
+    
+    public void OutputDoorsStatusSideBySide(
+        int initialPadding,
+        int spaceBetweenDoors,
+        int doorWidth,
+        int spaceBetweenDoorsAndStatus)
+    {
+        // Build the same status lines you currently print in the box
+        var statusLines = new List<string>();
+        statusLines.Add("Current Status:");
+        foreach (Door door in Enum.GetValues<Door>())
+            statusLines.Add("  " + Doors[door]);
+
+        var text = MontyHallRender.RenderDoorsWithStatus(
+            GetDoorStatusesInOrder(),
+            statusLines,
+            includeLabels: true,
+            initialPadding: initialPadding,
+            spaceBetweenDoors: spaceBetweenDoors,
+            doorWidth: doorWidth,
+            spaceBetweenDoorsAndStatus: spaceBetweenDoorsAndStatus
+        );
+
+        Console.WriteLine(text);
+    }
+    
 
     public void OutputDoorsStatusText()
     {
@@ -161,12 +188,17 @@ public class GameRound
         Console.WriteLine(bottom);
     }
 
-
     public void OutputDoorsStatusGraphic()
     {
-        var text = MontyHallRender.RenderDoors(GetDoorStatusesInOrder(), true, 15, 10, 9);
-        Console.WriteLine(text);
+        // e.g., left pad 4, doors gap 6, door width 9, doors→status gap 6
+        OutputDoorsStatusSideBySide(4, 6, 9, 6);
     }
+
+    // public void OutputDoorsStatusGraphic()
+    // {
+    //     var text = MontyHallRender.RenderDoors(GetDoorStatusesInOrder(), true, 15, 10, 9, 6);
+    //     Console.WriteLine(text);
+    // }
 
     private List<DoorStatus> GetDoorStatusesInOrder()
     {

@@ -16,5 +16,10 @@ public static class Picker
         Console.WriteLine($"  Picked door => {d} <= - from {string.Join(",",doorChoicesText)}");
         return d;
     }
+
+    public static bool YesOrNo()
+    {
+        return _rnd.Next(0, 2) == 1;
+    }
 }
 

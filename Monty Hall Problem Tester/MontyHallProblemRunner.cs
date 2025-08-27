@@ -31,11 +31,22 @@ public class MontyHallProblemRunner
         Console.WriteLine($"Step 2 - Host picks door {hostPickedDoorStep2.ToText()}");
         
         LogStatus(round);
+
+        var playerDecidesToChangeDoor = Picker.YesOrNo();
+        var playerPickedStep3 = round.StepThree_PlayerSelectsCurrentOrOtherDoor(playerDecidesToChangeDoor);
+        
+        Console.WriteLine($"Step 3 - Player picked door {playerPickedStep3.ToText()}");
+        
+        LogStatus(round);
+
+        var playerWon = round.StepFour_OpenPlayerSelectedDoor();
+        string playerText = playerWon ? "won" : "lost";
+        Console.WriteLine($"Step 4 - Player {playerText}");
     }
 
     private static void LogStatus(GameRound round)
     {
-        round.OutputDoorsStatusText();
+        //round.OutputDoorsStatusText();
         round.OutputDoorsStatusGraphic();
 
         Console.WriteLine();
