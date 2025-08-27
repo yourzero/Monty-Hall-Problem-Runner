@@ -5,6 +5,7 @@ public class GameRound
     //private Picker _picker = new Picker();
 
     public Dictionary<Door, DoorStatus> Doors = new Dictionary<Door, DoorStatus>(3);
+    private DoorStatus hostDoorStatus;
 
     public GameRound()
     {
@@ -41,6 +42,12 @@ public class GameRound
             .ToList();
     }
 
+    private List<Door> GetUnopenedDoors()
+    {
+        return Doors.Where(kv => kv.Value.DoorOpenState != DoorOpenState.Unopened).Select(kv => kv.Key)
+            .ToList();
+    }
+    
     private Door GetWinningDoor()
     {
         var d = Doors.Where(kv => kv.Value.DoorKnowledge == DoorKnowledge.KnownWinner).Select(kv => kv.Key).Single();
@@ -58,34 +65,61 @@ public class GameRound
         Console.WriteLine($"Step 1: Player has selected door => {selectedDoor} <=");
     }
 
-    public void StepTwo_HostOpenLosingDoor()
+    public Door StepTwo_HostOpenLosingDoor()
     {
         var doorsNotPickedByPlayer = GetDoorsNotPickedByPlayer();
         var winningDoor = GetWinningDoor();
         var hostDoorOptions = doorsNotPickedByPlayer.Where(d => d != winningDoor).ToArray();
         var hostPickedDoor = Picker.PickADoor(hostDoorOptions);
-        (Doors[hostPickedDoor].DoorPickedState, Doors[hostPickedDoor].DoorKnowledge) =
-            (DoorPickedState.PickedByHost, DoorKnowledge.KnownLoser);
+
+        hostDoorStatus = Doors[hostPickedDoor];
+        (hostDoorStatus.DoorPickedState, hostDoorStatus.DoorKnowledge, hostDoorStatus.DoorOpenState) =
+            (DoorPickedState.PickedByHost, DoorKnowledge.KnownLoser, DoorOpenState.Opened);
 
         Console.WriteLine($"Step 2: Host has opened unwinning door => {hostPickedDoor} <=");
+
+        return hostPickedDoor;
+    }
+
+    public Door StepThree_PlayerSelectsCurrentOrOtherDoor(bool changeDoorSelection)
+    {
+        var unopenedDoors = GetUnopenedDoors();
+        if (unopenedDoors.Count != 2) throw new Exception("Unopened doors not equal to 2.");
+        
+        if (changeDoorSelection)
+        {
+                
+        }
     }
 
     public void OutputDoorsStatusText()
     {
-        var padding = "    ";
-        Console.WriteLine(padding + "------------------------------------------------------------");
-        Console.WriteLine(padding + "Current Status:");
-        foreach (Door door in Enum.GetValuesAsUnderlyingType<Door>())
+        string leftPad = new string(' ', 10);
+        var lines = new List<string>();
+
+        lines.Add("Current Status:");
+        foreach (Door door in Enum.GetValues<Door>())
         {
-            Console.WriteLine(padding + "  " + Doors[door]);
+            lines.Add("  " + Doors[door]);
         }
 
-        Console.WriteLine(padding + "------------------------------------------------------------");
+        // Calculate max width of all lines
+        int maxWidth = lines.Max(l => l.Length);
+        string top    = leftPad + "┌" + new string('─', maxWidth + 2) + "┐";
+        string bottom = leftPad +"└" + new string('─', maxWidth + 2) + "┘";
+
+        Console.WriteLine(top);
+        foreach (var line in lines)
+        {
+            Console.WriteLine(leftPad + "│ " + line.PadRight(maxWidth) + " │");
+        }
+        Console.WriteLine(bottom);
     }
+
 
     public void OutputDoorsStatusGraphic()
     {
-        var text = MontyHallRender.RenderDoors(GetDoorStatusesInOrder(), true, 20, 10);
+        var text = MontyHallRender.RenderDoors(GetDoorStatusesInOrder(), true, 15, 10, 9);
         Console.WriteLine(text);
     }
 
