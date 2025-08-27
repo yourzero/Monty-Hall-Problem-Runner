@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monty Hall Problem Tester", "Monty Hall Problem Tester\Monty Hall Problem Tester.csproj", "{7C73BDF8-6CAD-49FB-823E-BBB594F66315}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7C73BDF8-6CAD-49FB-823E-BBB594F66315}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C73BDF8-6CAD-49FB-823E-BBB594F66315}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C73BDF8-6CAD-49FB-823E-BBB594F66315}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C73BDF8-6CAD-49FB-823E-BBB594F66315}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

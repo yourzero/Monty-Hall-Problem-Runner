@@ -1,0 +1,181 @@
+namespace Monty_Hall_Problem_Tester;
+
+public class GameRound
+{
+    //private Picker _picker = new Picker();
+
+    public Dictionary<Door, DoorStatus> Doors = new Dictionary<Door, DoorStatus>(3);
+
+    public GameRound()
+    {
+        var prizeDoor = Picker.PickADoor();
+
+        foreach (Door door in Enum.GetValuesAsUnderlyingType<Door>())
+        {
+            if (door == prizeDoor)
+                Doors[door] = new DoorStatus(DoorOpenState.Unopened, DoorKnowledge.KnownWinner,
+                    DoorPickedState.Unpicked, door);
+            else
+                Doors[door] = new DoorStatus(DoorOpenState.Unopened, DoorKnowledge.Unknown, DoorPickedState.Unpicked,
+                    door);
+        }
+
+
+        // this.LosingDoors = new List<Door>(2);
+        // foreach (var door in Enum.GetValues<Door>())
+        // {
+        //     if(door != PrizeDoor) LosingDoors.Add(door);
+        // }
+    }
+
+    public List<Door> PlayerSelectedDoors { get; private set; } = new List<Door>(2);
+
+    // public Door PlayerSelectedDoor { get; private set; }
+    // public Door PlayerSelectedDoor_Step1 { get; private set; }
+    // public Door PrizeDoor { get; private set; }
+    // public List<Door> LosingDoors { get; private set; }
+
+    private List<Door> GetDoorsNotPickedByPlayer()
+    {
+        return Doors.Where(kv => kv.Value.DoorPickedState != DoorPickedState.PickedByPlayer).Select(kv => kv.Key)
+            .ToList();
+    }
+
+    private Door GetWinningDoor()
+    {
+        var d = Doors.Where(kv => kv.Value.DoorKnowledge == DoorKnowledge.KnownWinner).Select(kv => kv.Key).Single();
+        return d;
+    }
+
+
+    public void StepOne_PlayerPickADoor(Door selectedDoor)
+    {
+        if (PlayerSelectedDoors.Any()) throw new Exception("Player Selected Doors already contains selections!");
+
+        PlayerSelectedDoors.Add(selectedDoor);
+        Doors[selectedDoor].DoorPickedState = DoorPickedState.PickedByPlayer;
+
+        Console.WriteLine($"Step 1: Player has selected door => {selectedDoor} <=");
+    }
+
+    public void StepTwo_HostOpenLosingDoor()
+    {
+        var doorsNotPickedByPlayer = GetDoorsNotPickedByPlayer();
+        var winningDoor = GetWinningDoor();
+        var hostDoorOptions = doorsNotPickedByPlayer.Where(d => d != winningDoor).ToArray();
+        var hostPickedDoor = Picker.PickADoor(hostDoorOptions);
+        (Doors[hostPickedDoor].DoorPickedState, Doors[hostPickedDoor].DoorKnowledge) =
+            (DoorPickedState.PickedByHost, DoorKnowledge.KnownLoser);
+
+        Console.WriteLine($"Step 2: Host has opened unwinning door => {hostPickedDoor} <=");
+    }
+
+    public void OutputDoorsStatusText()
+    {
+        var padding = "    ";
+        Console.WriteLine(padding + "------------------------------------------------------------");
+        Console.WriteLine(padding + "Current Status:");
+        foreach (Door door in Enum.GetValuesAsUnderlyingType<Door>())
+        {
+            Console.WriteLine(padding + "  " + Doors[door]);
+        }
+
+        Console.WriteLine(padding + "------------------------------------------------------------");
+    }
+
+    public void OutputDoorsStatusGraphic()
+    {
+        var text = MontyHallRender.RenderDoors(GetDoorStatusesInOrder(), true, 20, 10);
+        Console.WriteLine(text);
+    }
+
+    private List<DoorStatus> GetDoorStatusesInOrder()
+    {
+        return Doors.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToList();
+    }
+}
+
+public enum Door
+{
+    Door1,
+    Door2,
+    Door3
+}
+
+// public enum DoorStatus
+// {
+//     UnopenedAndUnknown,
+//     UnopenedAndWinner,
+//     OpenedAndLoser,
+//     OpenedAndWinner
+// }
+
+public enum DoorOpenState
+{
+    Unopened,
+    Opened
+}
+
+public enum DoorKnowledge
+{
+    Unknown,
+    KnownWinner,
+    KnownLoser
+}
+
+public enum DoorPickedState
+{
+    Unpicked,
+    PickedByPlayer,
+    PickedByHost
+}
+
+public class DoorStatus
+{
+    public DoorOpenState DoorOpenState { get; set; }
+    public DoorKnowledge DoorKnowledge { get; set; }
+    public DoorPickedState DoorPickedState { get; set; }
+
+
+    public DoorStatus(DoorOpenState doorOpenState, DoorKnowledge doorKnowledge, DoorPickedState doorPickedState,
+        Door door)
+    {
+        DoorOpenState = doorOpenState;
+        DoorKnowledge = doorKnowledge;
+        DoorPickedState = doorPickedState;
+        Door = door;
+    }
+
+    public Door Door { get; private set; }
+
+    public override string ToString()
+    {
+        return $"=> Door: {Door}: {DoorOpenState.ToText()} | {DoorKnowledge.ToText()} | {DoorPickedState.ToText()}";
+    }
+}
+
+public static class DoorStatusExtensions
+{
+    public static string ToText(this DoorOpenState state) => state switch
+    {
+        DoorOpenState.Unopened => "Unopened",
+        DoorOpenState.Opened   => "Opened",
+        _ => state.ToString()
+    };
+
+    public static string ToText(this DoorKnowledge knowledge) => knowledge switch
+    {
+        DoorKnowledge.Unknown     => "?",
+        DoorKnowledge.KnownWinner => "★",
+        DoorKnowledge.KnownLoser  => "X",
+        _ => knowledge.ToString()
+    };
+
+    public static string ToText(this DoorPickedState picked) => picked switch
+    {
+        DoorPickedState.Unpicked       => "Unpicked",
+        DoorPickedState.PickedByPlayer => "Picked by Player",
+        DoorPickedState.PickedByHost   => "Picked by Host",
+        _ => picked.ToString()
+    };
+}
