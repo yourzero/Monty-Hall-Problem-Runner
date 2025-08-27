@@ -12,6 +12,26 @@ public class MontyHallProblemRunner
         }
     }
 
+    struct RoundResult
+    {
+        public RoundResult(bool playerChangedDoor, bool playerWon, Door winningDoor, Door playerInitialDoorSelection, Door playerFinalDoorSelection, Door hostOpenedDoor)
+        {
+            PlayerChangedDoor = playerChangedDoor;
+            PlayerWon = playerWon;
+            WinningDoor = winningDoor;
+            PlayerInitialDoorSelection = playerInitialDoorSelection;
+            PlayerFinalDoorSelection = playerFinalDoorSelection;
+            HostOpenedDoor = hostOpenedDoor;
+        }
+
+        public bool PlayerChangedDoor { get; }
+        public bool PlayerWon { get; }
+        public Door WinningDoor { get;  }
+        public Door PlayerFinalDoorSelection { get; }
+        public Door PlayerInitialDoorSelection { get; }
+        public Door HostOpenedDoor { get; }
+    }
+
 
     private void RunOnce(int n)
     {
@@ -42,6 +62,9 @@ public class MontyHallProblemRunner
         var playerWon = round.StepFour_OpenPlayerSelectedDoor();
         string playerText = playerWon ? "won" : "lost";
         Console.WriteLine($"Step 4 - Player {playerText}");
+        
+        var roundStat = new RoundResult(playerDecidesToChangeDoor, playerWon, round.GetWinningDoor(), playerPickedDoorInitial, playerPickedStep3, hostPickedDoorStep2 );
+        
     }
 
     public static void LogStatus(GameRound round)

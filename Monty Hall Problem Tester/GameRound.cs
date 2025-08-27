@@ -48,7 +48,7 @@ public class GameRound
             .ToList();
     }
 
-    private Door GetWinningDoor()
+    public Door GetWinningDoor()
     {
         var d = Doors.Where(kv => kv.Value.DoorKnowledge == DoorKnowledge.KnownWinner).Select(kv => kv.Key).Single();
         return d;
@@ -98,20 +98,21 @@ public class GameRound
 
             doorSelectedByPlayer = doorToChangeTo.Door;
             PlayerSelectedDoors.Add(doorSelectedByPlayer);
-            
+
             Console.WriteLine(
                 $"Step 3: Player has opted to switch their picked door to {doorToChangeTo.Door.ToText()} => {doorChangedFrom.Door.ToText()} <=");
         }
         else
         {
             doorSelectedByPlayer = doorChangedFrom.Door;
-            Console.WriteLine($"Step 3: Player has opted to not switch their picked door: => {doorChangedFrom.Door.ToText()} <=");
+            Console.WriteLine(
+                $"Step 3: Player has opted to not switch their picked door: => {doorChangedFrom.Door.ToText()} <=");
         }
 
         return doorSelectedByPlayer;
     }
 
- 
+
     public bool StepFour_OpenPlayerSelectedDoor()
     {
         var playerDoor = GetDoorPickedByPlayer(Doors.Values);
@@ -119,81 +120,82 @@ public class GameRound
 
         if (playerDoor.DoorOpenState == DoorOpenState.Opened)
             throw new Exception("When opening player-picked door, door is already marked as open.");
-        
+
         playerDoor.DoorOpenState = DoorOpenState.Opened;
 
         var didPlayerWin = (GetWinningDoor() == playerDoor.Door);
         var playerWinText = didPlayerWin ? "WINNER!" : "loser";
-        
-        Console.WriteLine($"Drumroll... opening the player's selected door => {playerDoor.Door.ToText()} <= ... {playerWinText}");
+
+        Console.WriteLine(
+            $"Drumroll... opening the player's selected door => {playerDoor.Door.ToText()} <= ... {playerWinText}");
 
         return didPlayerWin;
-
     }
-    
+
     private static DoorStatus GetDoorPickedByPlayer(IEnumerable<DoorStatus> unopenedDoors)
     {
         return unopenedDoors.Where(d => d.DoorPickedState == DoorPickedState.PickedByPlayer).Single();
     }
-     public void OutputDoorsStatusText()
+
+    public void OutputDoorsStatusText()
+    {
+        // Keep your original text-only box for reference, if you still want it:
+        var lines = new List<string>();
+        lines.Add("Current Status:");
+        foreach (Door door in Enum.GetValues<Door>())
         {
-            // Keep your original text-only box for reference, if you still want it:
-            var lines = new List<string>();
-            lines.Add("Current Status:");
-            foreach (Door door in Enum.GetValues<Door>())
-            {
-                lines.Add("  " + Doors[door]);
-            }
-
-            int maxWidth = lines.Max(l => l.Length);
-            string top    = "┌" + new string('─', maxWidth + 2) + "┐";
-            string bottom = "└" + new string('─', maxWidth + 2) + "┘";
-
-            Console.WriteLine(top);
-            foreach (var l in lines)
-                Console.WriteLine("│ " + l.PadRight(maxWidth) + " │");
-            Console.WriteLine(bottom);
+            lines.Add("  " + Doors[door]);
         }
 
-        /// <summary>
-        /// New: Render doors and put the status box to the RIGHT of the doors.
-        /// </summary>
-        public void OutputDoorsStatusSideBySide(
-            int initialPadding,
-            int spaceBetweenDoors,
-            int doorWidth,
-            int spaceBetweenDoorsAndStatus)
-        {
-            var statusLines = new List<string> { "Current Status:" };
-            foreach (Door door in Enum.GetValues<Door>())
-                statusLines.Add("  " + Doors[door]);
+        int maxWidth = lines.Max(l => l.Length);
+        string top = "┌" + new string('─', maxWidth + 2) + "┐";
+        string bottom = "└" + new string('─', maxWidth + 2) + "┘";
 
-            var text = MontyHallRender.RenderDoorsWithStatus(
-                GetDoorStatusesInOrder().ToList(),
-                statusLines,
-                includeLabels: true,
-                initialPadding: initialPadding,
-                spaceBetweenDoors: spaceBetweenDoors,
-                doorWidth: doorWidth,
-                spaceBetweenDoorsAndStatus: spaceBetweenDoorsAndStatus
-            );
+        Console.WriteLine(top);
+        foreach (var l in lines)
+            Console.WriteLine("│ " + l.PadRight(maxWidth) + " │");
+        Console.WriteLine(bottom);
+    }
 
-            Console.WriteLine(text);
-        }
+    /// <summary>
+    /// New: Render doors and put the status box to the RIGHT of the doors.
+    /// </summary>
+    public void OutputDoorsStatusSideBySide(
+        int initialPadding,
+        int spaceBetweenDoors,
+        int doorWidth,
+        int spaceBetweenDoorsAndStatus)
+    {
+        var statusLines = new List<string> { "Current Status:" };
+        foreach (Door door in Enum.GetValues<Door>())
+            statusLines.Add("  " + Doors[door]);
 
-        /// <summary>
-        /// Convenience wrapper you can call wherever you previously printed graphics.
-        /// </summary>
-        public void OutputDoorsStatusGraphic()
-        {
-            // Tune these to your taste:
-            OutputDoorsStatusSideBySide(
-                initialPadding: 7,
-                spaceBetweenDoors: 6,
-                doorWidth: 9,
-                spaceBetweenDoorsAndStatus: 9
-            );
-        }
+        var text = MontyHallRender.RenderDoorsWithStatus(
+            GetDoorStatusesInOrder().ToList(),
+            statusLines,
+            includeLabels: true,
+            initialPadding: initialPadding,
+            spaceBetweenDoors: spaceBetweenDoors,
+            doorWidth: doorWidth,
+            spaceBetweenDoorsAndStatus: spaceBetweenDoorsAndStatus
+        );
+
+        Console.WriteLine(text);
+    }
+
+    /// <summary>
+    /// Convenience wrapper you can call wherever you previously printed graphics.
+    /// </summary>
+    public void OutputDoorsStatusGraphic()
+    {
+        // Tune these to your taste:
+        OutputDoorsStatusSideBySide(
+            initialPadding: 7,
+            spaceBetweenDoors: 6,
+            doorWidth: 9,
+            spaceBetweenDoorsAndStatus: 9
+        );
+    }
 
     // public void OutputDoorsStatusGraphic()
     // {
@@ -262,7 +264,8 @@ public class DoorStatus
 
     public override string ToString()
     {
-        return $"=> Door: {Door.ToText()}: {DoorOpenState.ToText()} | {DoorKnowledge.ToText()} | {DoorPickedState.ToText()}";
+        return
+            $"=> Door: {Door.ToText()}: {DoorOpenState.ToText()} | {DoorKnowledge.ToText()} | {DoorPickedState.ToText()}";
     }
 }
 
@@ -275,7 +278,7 @@ public static class DoorStatusExtensions
         Door.Door3 => "3",
         _ => door.ToString()
     };
-    
+
     public static string ToText(this DoorOpenState state) => state switch
     {
         DoorOpenState.Unopened => "Unopened",
