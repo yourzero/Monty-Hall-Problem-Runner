@@ -36,6 +36,68 @@ public class MontyHallProblemRunner
     }
 
     private void CalculateResults()
+{
+    var totalRounds = _roundResults.Count;
+    if (totalRounds == 0)
+    {
+        Console.WriteLine("No rounds to analyze.");
+        return;
+    }
+
+    // Joint counts
+    int switched                 = _roundResults.Count(r => r.PlayerChangedDoor);
+    int stayed                   = totalRounds - switched;
+    int win                      = _roundResults.Count(r => r.PlayerWon);
+    int lose                     = totalRounds - win;
+
+    int switchedWin              = _roundResults.Count(r => r.PlayerChangedDoor && r.PlayerWon);
+    int switchedLose             = _roundResults.Count(r => r.PlayerChangedDoor && !r.PlayerWon);
+    int stayedWin                = _roundResults.Count(r => !r.PlayerChangedDoor && r.PlayerWon);
+    int stayedLose               = _roundResults.Count(r => !r.PlayerChangedDoor && !r.PlayerWon);
+
+    // Overall proportions (of total)
+    double pSwitchedWinOverall   = (double)switchedWin   / totalRounds;
+    double pSwitchedLoseOverall  = (double)switchedLose  / totalRounds;
+    double pStayedWinOverall     = (double)stayedWin     / totalRounds;
+    double pStayedLoseOverall    = (double)stayedLose    / totalRounds;
+
+    // CONDITIONAL win rates (this is the key “2/3 vs 1/3” view)
+    double pWinGivenSwitch = switched > 0 ? (double)switchedWin / switched : 0.0;
+    double pWinGivenStay   = stayed   > 0 ? (double)stayedWin   / stayed   : 0.0;
+
+    Console.WriteLine("*************************************************************************");
+    Console.WriteLine();
+    Console.WriteLine(" Results: ");
+    Console.WriteLine($"   Rounds: {totalRounds}");
+    Console.WriteLine($"   Player Changed Door: {switched} ({(double)switched/totalRounds:P1})");
+    Console.WriteLine($"   Player Stayed:       {stayed}   ({(double)stayed/totalRounds:P1})");
+    Console.WriteLine($"   Player Won (overall): {win} ({(double)win/totalRounds:P1})");
+    Console.WriteLine();
+
+    // Joint (of total)
+    Console.WriteLine("   Joint outcomes (of total rounds):");
+    Console.WriteLine($"     Switch & Win : {switchedWin,5}  ({pSwitchedWinOverall:P1})");
+    Console.WriteLine($"     Switch & Lose: {switchedLose,5}  ({pSwitchedLoseOverall:P1})");
+    Console.WriteLine($"     Stay   & Win : {stayedWin,5}  ({pStayedWinOverall:P1})");
+    Console.WriteLine($"     Stay   & Lose: {stayedLose,5}  ({pStayedLoseOverall:P1})");
+    Console.WriteLine();
+
+    // CONDITIONAL (the Monty Hall punchline)
+    Console.WriteLine("   Conditional win rates:");
+    Console.WriteLine($"     P(Win | Switched): {pWinGivenSwitch:P2}   (expected ≈ 66.67%)");
+    Console.WriteLine($"     P(Win | Stayed)  : {pWinGivenStay:P2}   (expected ≈ 33.33%)");
+
+    Console.WriteLine();
+    Console.WriteLine("   Confusion matrix (counts):");
+    Console.WriteLine("                   Win     Lose    Total");
+    Console.WriteLine($"     Switched   : {switchedWin,5} | {switchedLose,5} | {switched,5}");
+    Console.WriteLine($"     Stayed     : {stayedWin,5} | {stayedLose,5} | {stayed,5}");
+    Console.WriteLine($"     Total      : {win,5} | {lose,5} | {totalRounds,5}");
+    Console.WriteLine();
+    Console.WriteLine("*************************************************************************");
+}
+    
+    private void CalculateResultsOld()
     {
         var numberOfTimePlayerChangedDoor = _roundResults.Count(r => r.PlayerChangedDoor);
         var numberOfTimePlayerWon = _roundResults.Count(r => r.PlayerWon);
