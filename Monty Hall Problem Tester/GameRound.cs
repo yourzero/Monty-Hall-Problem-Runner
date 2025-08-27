@@ -117,7 +117,18 @@ public class GameRound
         var playerDoor = GetDoorPickedByPlayer(Doors.Values);
         if (playerDoor == null) throw new Exception();
 
+        if (playerDoor.DoorOpenState == DoorOpenState.Opened)
+            throw new Exception("When opening player-picked door, door is already marked as open.");
         
+        playerDoor.DoorOpenState = DoorOpenState.Opened;
+
+        var didPlayerWin = (GetWinningDoor() == playerDoor.Door);
+        var playerWinText = didPlayerWin ? "WINNER!" : "loser";
+        
+        Console.WriteLine($"Drumroll... opening the player's selected door => {playerDoor.Door.ToText()} <= ... {playerWinText}");
+
+        return didPlayerWin;
+
     }
     
     private static DoorStatus GetDoorPickedByPlayer(IEnumerable<DoorStatus> unopenedDoors)
