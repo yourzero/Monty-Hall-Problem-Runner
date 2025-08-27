@@ -2,7 +2,7 @@ namespace Monty_Hall_Problem_Tester;
 
 public class MontyHallProblemRunner
 {
-    private const int rounds = 10;
+    private const int rounds = 1;
     
     public void Run()
     {
@@ -44,10 +44,15 @@ public class MontyHallProblemRunner
         Console.WriteLine($"Step 4 - Player {playerText}");
     }
 
-    private static void LogStatus(GameRound round)
+    public static void LogStatus(GameRound round)
     {
-        //round.OutputDoorsStatusText();
-        round.OutputDoorsStatusGraphic();
+        // Use the combined renderer: doors on the left, status box on the right
+        round.OutputDoorsStatusSideBySide(
+            initialPadding: 7,          // left margin before the first door
+            spaceBetweenDoors: 6,       // gap between each door
+            doorWidth: 9,               // door width (characters)
+            spaceBetweenDoorsAndStatus: 9 // gap between doors and the status box on the right
+        );
 
         Console.WriteLine();
         Console.WriteLine("=============================================================================");

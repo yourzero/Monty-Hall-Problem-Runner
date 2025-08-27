@@ -7,19 +7,23 @@ using System.Text;
 
 public static class MontyHallRender
 {
-    // Keep your current glyphs/colors
-    private const string WinnerGlyph  = "⭐";
-    private const string LoserGlyph   = "✖";
-    private const string UnknownGlyph = "⁇";
-
+    // ── ANSI colors ───────────────────────────────────────────────────────────
     private const string Reset   = "\x1b[0m";
     private const string Yellow  = "\x1b[33m"; // winner
     private const string Magenta = "\x1b[35m"; // loser
     private const string Cyan    = "\x1b[36m"; // unknown
 
-    private static string Color(string glyph, string ansi) => $"{ansi}{glyph}{Reset}";
+    private static string Colorize(string glyph, string ansi) => $"{ansi}{glyph}{Reset}";
 
-    // NEW: doors + status box side-by-side
+    // ── Glyphs (assume monospace = all 1 column wide) ─────────────────────────
+    private const string WinnerGlyph  = "⭐"; // large-looking but single cell in monospace
+    private const string LoserGlyph   = "✖";
+    private const string UnknownGlyph = "⁇";
+
+    // ── Public: doors + status box side-by-side ───────────────────────────────
+    /// <summary>
+    /// Renders 3 doors side-by-side, with the status text box shown to the RIGHT of the doors.
+    /// </summary>
     public static string RenderDoorsWithStatus(
         List<DoorStatus> doors,
         IEnumerable<string> statusLines,
@@ -35,40 +39,32 @@ public static class MontyHallRender
 
         Console.OutputEncoding = Encoding.UTF8;
 
-        // Build the 3 door blocks (each is an array of lines of fixed doorWidth)
+        // Build the 3 door blocks (arrays of equal-height strings)
         var doorBlocks  = doors.Select((d, i) => RenderOneDoorColored(d, i + 1, includeLabels, doorWidth)).ToArray();
         int doorRows    = doorBlocks[0].Length;
         string between  = new string(' ', spaceBetweenDoors);
         string leftPad  = new string(' ', initialPadding);
 
-        // Prepare stitched door rows (single string per row)
+        // Stitch each "row" of the three doors
         var doorRowStrings = new List<string>(doorRows);
         for (int r = 0; r < doorRows; r++)
-        {
-            doorRowStrings.Add(
-                doorBlocks[0][r] + between + doorBlocks[1][r] + between + doorBlocks[2][r]
-            );
-        }
+            doorRowStrings.Add(doorBlocks[0][r] + between + doorBlocks[1][r] + between + doorBlocks[2][r]);
 
-        // Build the status box (independently sized)
-        var lines = statusLines?.ToList() ?? new List<string>();
-        if (lines.Count == 0) lines.Add("Current Status:");
-
+        // Build status box
+        var lines = statusLines?.ToList() ?? new List<string> { "Current Status:" };
         int maxWidth = lines.Max(l => l.Length);
         string top    = "┌" + new string('─', maxWidth + 2) + "┐";
         string bottom = "└" + new string('─', maxWidth + 2) + "┘";
 
-        var statusBlock = new List<string>(lines.Count + 2);
-        statusBlock.Add(top);
-        foreach (var l in lines)
-            statusBlock.Add("│ " + l.PadRight(maxWidth) + " │");
+        var statusBlock = new List<string>(lines.Count + 2) { top };
+        foreach (var l in lines) statusBlock.Add("│ " + l.PadRight(maxWidth) + " │");
         statusBlock.Add(bottom);
 
         int statusRows = statusBlock.Count;
-        int rows = Math.Max(doorRows, statusRows);
-
-        // Combine doors + gap + status (right)
+        int rows       = Math.Max(doorRows, statusRows);
         string gapRight = new string(' ', spaceBetweenDoorsAndStatus);
+
+        // Combine doors (left) + gap + status (right)
         var sb = new StringBuilder();
         for (int r = 0; r < rows; r++)
         {
@@ -80,47 +76,39 @@ public static class MontyHallRender
         return sb.ToString();
     }
 
-    // Single door with number on top and status letter at bottom.
+    // ── One door block (with number sign above and status letter below) ───────
     private static string[] RenderOneDoorColored(DoorStatus door, int number, bool includeLabel, int doorWidth)
     {
         int interiorWidth = doorWidth - 2;
 
+        // Door body (5 rows: top/bottom border + 3 interior rows)
+        char fillChar = door.DoorOpenState == DoorOpenState.Unopened ? '░' : ' ';
         var body = new List<string>(5)
         {
             "┌" + new string('─', interiorWidth) + "┐",
-            "│" + new string(door.DoorOpenState == DoorOpenState.Unopened ? '░' : ' ', interiorWidth) + "│",
-            "│" + new string(door.DoorOpenState == DoorOpenState.Unopened ? '░' : ' ', interiorWidth) + "│",
-            "│" + new string(door.DoorOpenState == DoorOpenState.Unopened ? '░' : ' ', interiorWidth) + "│",
+            "│" + new string(fillChar, interiorWidth) + "│",
+            "│" + new string(fillChar, interiorWidth) + "│",
+            "│" + new string(fillChar, interiorWidth) + "│",
             "└" + new string('─', interiorWidth) + "┘"
         };
 
-        // Colored center glyph
+        // Colored center glyph (assume monospace = single cell)
         string? glyph = door.DoorKnowledge switch
         {
-            DoorKnowledge.KnownWinner => Color(WinnerGlyph,  Yellow),
-            DoorKnowledge.KnownLoser  => Color(LoserGlyph,   Magenta),
-            DoorKnowledge.Unknown     => (door.DoorOpenState == DoorOpenState.Unopened) ? Color(UnknownGlyph, Cyan) : null,
+            DoorKnowledge.KnownWinner => Colorize(WinnerGlyph,  Yellow),
+            DoorKnowledge.KnownLoser  => Colorize(LoserGlyph,   Magenta),
+            DoorKnowledge.Unknown     => (door.DoorOpenState == DoorOpenState.Unopened) ? Colorize(UnknownGlyph, Cyan) : null,
             _ => null
         };
 
         if (glyph != null)
         {
-            // Visual center inside border
+            // Visual center inside the borders
             int mid = 1 + (interiorWidth / 2);
 
-            // Reserve [space][glyph][space], shifted one cell LEFT vs center
-            bool canPadBothSides = (interiorWidth >= 5); // doorWidth >= 7
-            if (canPadBothSides)
-            {
-                int start = Math.Max(1, mid - 2);                        // << shifted 1 cell more left
-                if (start + 2 > interiorWidth) start = interiorWidth - 2;
-                body[2] = Replace3At(body[2], start, glyph);             // [space][glyph][space]
-            }
-            else
-            {
-                // narrow door fallback
-                body[2] = ReplaceAt(body[2], mid, glyph);
-            }
+            // Insert three cells "[space][glyph][space]" and purposely start 1 cell LEFT of center
+            int start = Math.Max(1, mid - 2);
+            body[2] = ReplaceNAt(body[2], start, 3, " " + glyph + " ");
         }
 
         // Top number sign (3 rows)
@@ -131,7 +119,7 @@ public static class MontyHallRender
             CenterToWidth("└─┘", doorWidth),
         };
 
-        // Bottom status marker
+        // Bottom status marker (single letter centered)
         char statusMarker = door.DoorPickedState switch
         {
             DoorPickedState.PickedByPlayer => 'P',
@@ -146,19 +134,14 @@ public static class MontyHallRender
         return lines.ToArray();
     }
 
-    // Replace [start..start+2] with " glyph " (three cells)
-    private static string Replace3At(string line, int start, string glyph)
+    // ── Helpers ────────────────────────────────────────────────────────────────
+    private static string ReplaceNAt(string line, int start, int count, string replacement)
     {
+        // Replaces exactly 'count' characters starting at 'start' with 'replacement'
+        // (Assumes 'line' has no ANSI codes before replacement; we splice the colored glyph string here.)
         var before = line.Substring(0, start);
-        var after  = (start + 3 <= line.Length) ? line.Substring(start + 3) : "";
-        return before + " " + glyph + " " + after;
-    }
-
-    private static string ReplaceAt(string line, int index, string glyph)
-    {
-        var before = line.Substring(0, index);
-        var after  = (index + 1 <= line.Length) ? line.Substring(index + 1) : "";
-        return before + glyph + after;
+        var after  = (start + count <= line.Length) ? line.Substring(start + count) : "";
+        return before + replacement + after;
     }
 
     private static string CenterToWidth(string s, int width)

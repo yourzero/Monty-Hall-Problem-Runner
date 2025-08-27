@@ -135,64 +135,65 @@ public class GameRound
     {
         return unopenedDoors.Where(d => d.DoorPickedState == DoorPickedState.PickedByPlayer).Single();
     }
-    
-    
-    public void OutputDoorsStatusSideBySide(
-        int initialPadding,
-        int spaceBetweenDoors,
-        int doorWidth,
-        int spaceBetweenDoorsAndStatus)
-    {
-        // Build the same status lines you currently print in the box
-        var statusLines = new List<string>();
-        statusLines.Add("Current Status:");
-        foreach (Door door in Enum.GetValues<Door>())
-            statusLines.Add("  " + Doors[door]);
-
-        var text = MontyHallRender.RenderDoorsWithStatus(
-            GetDoorStatusesInOrder(),
-            statusLines,
-            includeLabels: true,
-            initialPadding: initialPadding,
-            spaceBetweenDoors: spaceBetweenDoors,
-            doorWidth: doorWidth,
-            spaceBetweenDoorsAndStatus: spaceBetweenDoorsAndStatus
-        );
-
-        Console.WriteLine(text);
-    }
-    
-
-    public void OutputDoorsStatusText()
-    {
-        string leftPad = new string(' ', 10);
-        var lines = new List<string>();
-
-        lines.Add("Current Status:");
-        foreach (Door door in Enum.GetValues<Door>())
+     public void OutputDoorsStatusText()
         {
-            lines.Add("  " + Doors[door]);
+            // Keep your original text-only box for reference, if you still want it:
+            var lines = new List<string>();
+            lines.Add("Current Status:");
+            foreach (Door door in Enum.GetValues<Door>())
+            {
+                lines.Add("  " + Doors[door]);
+            }
+
+            int maxWidth = lines.Max(l => l.Length);
+            string top    = "┌" + new string('─', maxWidth + 2) + "┐";
+            string bottom = "└" + new string('─', maxWidth + 2) + "┘";
+
+            Console.WriteLine(top);
+            foreach (var l in lines)
+                Console.WriteLine("│ " + l.PadRight(maxWidth) + " │");
+            Console.WriteLine(bottom);
         }
 
-        // Calculate max width of all lines
-        int maxWidth = lines.Max(l => l.Length);
-        string top = leftPad + "┌" + new string('─', maxWidth + 2) + "┐";
-        string bottom = leftPad + "└" + new string('─', maxWidth + 2) + "┘";
-
-        Console.WriteLine(top);
-        foreach (var line in lines)
+        /// <summary>
+        /// New: Render doors and put the status box to the RIGHT of the doors.
+        /// </summary>
+        public void OutputDoorsStatusSideBySide(
+            int initialPadding,
+            int spaceBetweenDoors,
+            int doorWidth,
+            int spaceBetweenDoorsAndStatus)
         {
-            Console.WriteLine(leftPad + "│ " + line.PadRight(maxWidth) + " │");
+            var statusLines = new List<string> { "Current Status:" };
+            foreach (Door door in Enum.GetValues<Door>())
+                statusLines.Add("  " + Doors[door]);
+
+            var text = MontyHallRender.RenderDoorsWithStatus(
+                GetDoorStatusesInOrder().ToList(),
+                statusLines,
+                includeLabels: true,
+                initialPadding: initialPadding,
+                spaceBetweenDoors: spaceBetweenDoors,
+                doorWidth: doorWidth,
+                spaceBetweenDoorsAndStatus: spaceBetweenDoorsAndStatus
+            );
+
+            Console.WriteLine(text);
         }
 
-        Console.WriteLine(bottom);
-    }
-
-    public void OutputDoorsStatusGraphic()
-    {
-        // e.g., left pad 4, doors gap 6, door width 9, doors→status gap 6
-        OutputDoorsStatusSideBySide(4, 6, 9, 6);
-    }
+        /// <summary>
+        /// Convenience wrapper you can call wherever you previously printed graphics.
+        /// </summary>
+        public void OutputDoorsStatusGraphic()
+        {
+            // Tune these to your taste:
+            OutputDoorsStatusSideBySide(
+                initialPadding: 7,
+                spaceBetweenDoors: 6,
+                doorWidth: 9,
+                spaceBetweenDoorsAndStatus: 9
+            );
+        }
 
     // public void OutputDoorsStatusGraphic()
     // {
