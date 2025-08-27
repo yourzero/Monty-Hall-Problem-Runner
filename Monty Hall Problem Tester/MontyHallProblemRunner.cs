@@ -2,7 +2,7 @@ namespace Monty_Hall_Problem_Tester;
 
 public class MontyHallProblemRunner
 {
-    private const int rounds = 1;
+    private const int rounds = 10;
     
     public void Run()
     {
