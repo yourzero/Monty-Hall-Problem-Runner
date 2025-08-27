@@ -86,7 +86,7 @@ public class GameRound
         var unopenedDoors = GetUnopenedDoors();
         if (unopenedDoors.Count != 2) throw new Exception("Unopened doors not equal to 2.");
 
-        var doorChangedFrom = unopenedDoors.Where(d => d.DoorPickedState == DoorPickedState.PickedByPlayer).Single();
+        var doorChangedFrom = GetDoorPickedByPlayer(unopenedDoors);
         Door doorSelectedByPlayer;
 
         if (changeDoorSelection)
@@ -97,6 +97,7 @@ public class GameRound
             doorChangedFrom.DoorPickedState = DoorPickedState.PickedByPlayer;
 
             doorSelectedByPlayer = doorToChangeTo.Door;
+            PlayerSelectedDoors.Add(doorSelectedByPlayer);
             
             Console.WriteLine(
                 $"Step 3: Player has opted to switch their picked door to {doorToChangeTo.Door.ToText()} => {doorChangedFrom.Door.ToText()} <=");
@@ -108,6 +109,20 @@ public class GameRound
         }
 
         return doorSelectedByPlayer;
+    }
+
+ 
+    public bool StepFour_OpenPlayerSelectedDoor()
+    {
+        var playerDoor = GetDoorPickedByPlayer(Doors.Values);
+        if (playerDoor == null) throw new Exception();
+
+        
+    }
+    
+    private static DoorStatus GetDoorPickedByPlayer(IEnumerable<DoorStatus> unopenedDoors)
+    {
+        return unopenedDoors.Where(d => d.DoorPickedState == DoorPickedState.PickedByPlayer).Single();
     }
 
     public void OutputDoorsStatusText()

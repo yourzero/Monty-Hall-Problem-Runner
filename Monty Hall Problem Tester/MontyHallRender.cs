@@ -83,10 +83,22 @@ public static class MontyHallRender
 
         if (glyph != null)
         {
-            // Center column inside the bordered line (absolute column in the full string)
-            int centerColAbs = 1 + (interiorWidth / 2); // border at 0, interior starts at 1
-            body[2] = ReplaceAt(body[2], centerColAbs, glyph); // middle row of the 3 interior rows
-            //body[2] = ReplaceAt(body[2], centerColAbs, glyph); // middle row of the 3 interior rows
+            // visual center column inside the bordered line
+            int mid = 1 + (interiorWidth / 2);
+
+            // if we have room (doorWidth >= 7), reserve [space][glyph][space]
+            bool canPadBothSides = (interiorWidth >= 5); // doorWidth >= 7
+            if (canPadBothSides)
+            {
+                int start = Math.Max(1, mid - 1);                 // start one cell left of center
+                if (start + 2 > interiorWidth) start = interiorWidth - 2; // clamp
+                body[2] = Replace3At(body[2], start, glyph);      // replace 3 cells
+            }
+            else
+            {
+                // fallback: just replace the center cell (narrow doors)
+                body[2] = ReplaceAt(body[2], mid, glyph);
+            }
         }
 
         // Top number sign (3x1)
@@ -113,12 +125,22 @@ public static class MontyHallRender
         return lines.ToArray();
     }
 
-    // Replace the character at visual column 'index' with 'replacement' (a string, e.g., colored glyph).
-    private static string ReplaceAt(string line, int index, string replacement)
+    private static string Replace3At(string line, int start, string glyph)
     {
-        // Assumes 'line' currently contains no ANSI sequences; index is a raw char index.
-        return line.Substring(0, index) + replacement + line.Substring(index + 1);
+        // assumes line has no ANSI yet; indices are raw char positions
+        var before = line.Substring(0, start);
+        var after  = (start + 3 <= line.Length) ? line.Substring(start + 3) : "";
+        return before + " " + glyph + " " + after;
     }
+
+// Replace one cell at 'index' with 'glyph' (no side padding)
+    private static string ReplaceAt(string line, int index, string glyph)
+    {
+        var before = line.Substring(0, index);
+        var after  = (index + 1 <= line.Length) ? line.Substring(index + 1) : "";
+        return before + glyph + after;
+    }
+
 
     // Centers a short string within a fixed width by left/right padding.
     private static string CenterToWidth(string s, int width)
