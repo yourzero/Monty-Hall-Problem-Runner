@@ -22,13 +22,13 @@ public class MontyHallProblemRunner
 
         var playerPickedDoorInitial = Picker.PickADoor();
         round.StepOne_PlayerPickADoor(playerPickedDoorInitial);
-        Console.WriteLine($"Step 1 - Player picks door {playerPickedDoorInitial}");
+        Console.WriteLine($"Step 1 - Player picks door {playerPickedDoorInitial.ToText()}");
         
         LogStatus(round);
         
         var hostPickedDoorStep2 = round.StepTwo_HostOpenLosingDoor();
         
-        Console.WriteLine($"Step 2 - Host picks door {hostPickedDoorStep2}");
+        Console.WriteLine($"Step 2 - Host picks door {hostPickedDoorStep2.ToText()}");
         
         LogStatus(round);
     }

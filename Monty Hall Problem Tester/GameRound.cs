@@ -42,12 +42,12 @@ public class GameRound
             .ToList();
     }
 
-    private List<Door> GetUnopenedDoors()
+    private List<DoorStatus> GetUnopenedDoors()
     {
-        return Doors.Where(kv => kv.Value.DoorOpenState != DoorOpenState.Unopened).Select(kv => kv.Key)
+        return Doors.Where(kv => kv.Value.DoorOpenState != DoorOpenState.Unopened).Select(kv => kv.Value)
             .ToList();
     }
-    
+
     private Door GetWinningDoor()
     {
         var d = Doors.Where(kv => kv.Value.DoorKnowledge == DoorKnowledge.KnownWinner).Select(kv => kv.Key).Single();
@@ -62,7 +62,7 @@ public class GameRound
         PlayerSelectedDoors.Add(selectedDoor);
         Doors[selectedDoor].DoorPickedState = DoorPickedState.PickedByPlayer;
 
-        Console.WriteLine($"Step 1: Player has selected door => {selectedDoor} <=");
+        Console.WriteLine($"Step 1: Player has selected door => {selectedDoor.ToText()} <=");
     }
 
     public Door StepTwo_HostOpenLosingDoor()
@@ -76,7 +76,7 @@ public class GameRound
         (hostDoorStatus.DoorPickedState, hostDoorStatus.DoorKnowledge, hostDoorStatus.DoorOpenState) =
             (DoorPickedState.PickedByHost, DoorKnowledge.KnownLoser, DoorOpenState.Opened);
 
-        Console.WriteLine($"Step 2: Host has opened unwinning door => {hostPickedDoor} <=");
+        Console.WriteLine($"Step 2: Host has opened unwinning door => {hostPickedDoor.ToText()} <=");
 
         return hostPickedDoor;
     }
@@ -85,11 +85,29 @@ public class GameRound
     {
         var unopenedDoors = GetUnopenedDoors();
         if (unopenedDoors.Count != 2) throw new Exception("Unopened doors not equal to 2.");
-        
+
+        var doorChangedFrom = unopenedDoors.Where(d => d.DoorPickedState == DoorPickedState.PickedByPlayer).Single();
+        Door doorSelectedByPlayer;
+
         if (changeDoorSelection)
         {
-                
+            var doorToChangeTo = unopenedDoors.Where(d => d.DoorPickedState != DoorPickedState.PickedByPlayer).Single();
+
+            doorToChangeTo.DoorPickedState = DoorPickedState.PickedByPlayer;
+            doorChangedFrom.DoorPickedState = DoorPickedState.PickedByPlayer;
+
+            doorSelectedByPlayer = doorToChangeTo.Door;
+            
+            Console.WriteLine(
+                $"Step 3: Player has opted to switch their picked door to {doorToChangeTo.Door.ToText()} => {doorChangedFrom.Door.ToText()} <=");
         }
+        else
+        {
+            doorSelectedByPlayer = doorChangedFrom.Door;
+            Console.WriteLine($"Step 3: Player has opted to not switch their picked door: => {doorChangedFrom.Door.ToText()} <=");
+        }
+
+        return doorSelectedByPlayer;
     }
 
     public void OutputDoorsStatusText()
@@ -105,14 +123,15 @@ public class GameRound
 
         // Calculate max width of all lines
         int maxWidth = lines.Max(l => l.Length);
-        string top    = leftPad + "┌" + new string('─', maxWidth + 2) + "┐";
-        string bottom = leftPad +"└" + new string('─', maxWidth + 2) + "┘";
+        string top = leftPad + "┌" + new string('─', maxWidth + 2) + "┐";
+        string bottom = leftPad + "└" + new string('─', maxWidth + 2) + "┘";
 
         Console.WriteLine(top);
         foreach (var line in lines)
         {
             Console.WriteLine(leftPad + "│ " + line.PadRight(maxWidth) + " │");
         }
+
         Console.WriteLine(bottom);
     }
 
@@ -184,32 +203,40 @@ public class DoorStatus
 
     public override string ToString()
     {
-        return $"=> Door: {Door}: {DoorOpenState.ToText()} | {DoorKnowledge.ToText()} | {DoorPickedState.ToText()}";
+        return $"=> Door: {Door.ToText()}: {DoorOpenState.ToText()} | {DoorKnowledge.ToText()} | {DoorPickedState.ToText()}";
     }
 }
 
 public static class DoorStatusExtensions
 {
+    public static string ToText(this Door door) => door switch
+    {
+        Door.Door1 => "1",
+        Door.Door2 => "2",
+        Door.Door3 => "3",
+        _ => door.ToString()
+    };
+    
     public static string ToText(this DoorOpenState state) => state switch
     {
         DoorOpenState.Unopened => "Unopened",
-        DoorOpenState.Opened   => "Opened",
+        DoorOpenState.Opened => "Opened",
         _ => state.ToString()
     };
 
     public static string ToText(this DoorKnowledge knowledge) => knowledge switch
     {
-        DoorKnowledge.Unknown     => "?",
+        DoorKnowledge.Unknown => "?",
         DoorKnowledge.KnownWinner => "★",
-        DoorKnowledge.KnownLoser  => "X",
+        DoorKnowledge.KnownLoser => "X",
         _ => knowledge.ToString()
     };
 
     public static string ToText(this DoorPickedState picked) => picked switch
     {
-        DoorPickedState.Unpicked       => "Unpicked",
+        DoorPickedState.Unpicked => "Unpicked",
         DoorPickedState.PickedByPlayer => "Picked by Player",
-        DoorPickedState.PickedByHost   => "Picked by Host",
+        DoorPickedState.PickedByHost => "Picked by Host",
         _ => picked.ToString()
     };
 }
