@@ -10,19 +10,20 @@ public static class MontyHallRender
     // ── ANSI colors ───────────────────────────────────────────────────────────
     private const string Reset   = "\x1b[0m";
     private const string Yellow  = "\x1b[33m"; // winner
-    private const string Magenta = "\x1b[35m"; // loser
+    private const string Magenta = "\x1b[31m"; // loser
     private const string Cyan    = "\x1b[36m"; // unknown
 
     private static string Colorize(string glyph, string ansi) => $"{ansi}{glyph}{Reset}";
 
     // ── Glyphs (assume monospace = all 1 column wide) ─────────────────────────
-    private const string WinnerGlyph  = "⭐"; // large-looking but single cell in monospace
+    private const string WinnerGlyph  = "⭐";
     private const string LoserGlyph   = "✖";
     private const string UnknownGlyph = "⁇";
 
-    // ── Public: doors + status box side-by-side ───────────────────────────────
+    // ── Public: doors + status box side-by-side (width-aware) ─────────────────
     /// <summary>
-    /// Renders 3 doors side-by-side, with the status text box shown to the RIGHT of the doors.
+    /// Renders 3 doors side-by-side. If there is room, prints the status box to the RIGHT;
+    /// otherwise, falls back to printing the status box BELOW the doors to avoid terminal wrapping.
     /// </summary>
     public static string RenderDoorsWithStatus(
         List<DoorStatus> doors,
@@ -52,27 +53,60 @@ public static class MontyHallRender
 
         // Build status box
         var lines = statusLines?.ToList() ?? new List<string> { "Current Status:" };
-        int maxWidth = lines.Max(l => l.Length);
-        string top    = "┌" + new string('─', maxWidth + 2) + "┐";
-        string bottom = "└" + new string('─', maxWidth + 2) + "┘";
+        int statusInnerWidth = lines.Max(l => l.Length);
+        string top    = "┌" + new string('─', statusInnerWidth + 2) + "┐";
+        string bottom = "└" + new string('─', statusInnerWidth + 2) + "┘";
 
         var statusBlock = new List<string>(lines.Count + 2) { top };
-        foreach (var l in lines) statusBlock.Add("│ " + l.PadRight(maxWidth) + " │");
+        foreach (var l in lines) statusBlock.Add("│ " + l.PadRight(statusInnerWidth) + " │");
         statusBlock.Add(bottom);
 
         int statusRows = statusBlock.Count;
-        int rows       = Math.Max(doorRows, statusRows);
-        string gapRight = new string(' ', spaceBetweenDoorsAndStatus);
 
-        // Combine doors (left) + gap + status (right)
+        // ── width-aware layout decision ──
+        int doorsWidth = doorRowStrings[0].Length;                  // total width of the stitched doors line
+        int statusWidth = statusBlock[0].Length;                    // width of the status box
+        int totalSideBySideWidth = initialPadding + doorsWidth + spaceBetweenDoorsAndStatus + statusWidth;
+
+        // Use Console.WindowWidth if available; otherwise assume a wide window.
+        int winWidth;
+        try { winWidth = Math.Max(1, Console.WindowWidth); }
+        catch { winWidth = int.MaxValue / 4; }
+
+        bool fitsSideBySide = totalSideBySideWidth <= winWidth;
+
         var sb = new StringBuilder();
-        for (int r = 0; r < rows; r++)
+
+        if (fitsSideBySide)
         {
-            string doorPart   = (r < doorRows)   ? doorRowStrings[r] : new string(' ', doorRowStrings[0].Length);
-            string statusPart = (r < statusRows) ? statusBlock[r]    : "";
-            sb.Append(leftPad).Append(doorPart).Append(gapRight).Append(statusPart);
-            if (r < rows - 1) sb.AppendLine();
+            // Combine doors (left) + gap + status (right)
+            string gapRight = new string(' ', spaceBetweenDoorsAndStatus);
+            int rows = Math.Max(doorRows, statusRows);
+
+            for (int r = 0; r < rows; r++)
+            {
+                string doorPart   = (r < doorRows)   ? doorRowStrings[r] : new string(' ', doorsWidth);
+                string statusPart = (r < statusRows) ? statusBlock[r]    : "";
+                sb.Append(leftPad).Append(doorPart).Append(gapRight).Append(statusPart);
+                if (r < rows - 1) sb.AppendLine();
+            }
         }
+        else
+        {
+            // Fallback: render doors first, then status box below with same left padding
+            for (int r = 0; r < doorRows; r++)
+            {
+                sb.Append(leftPad).Append(doorRowStrings[r]);
+                if (r < doorRows - 1) sb.AppendLine();
+            }
+            sb.AppendLine();
+            for (int r = 0; r < statusRows; r++)
+            {
+                sb.Append(leftPad).Append(statusBlock[r]);
+                if (r < statusRows - 1) sb.AppendLine();
+            }
+        }
+
         return sb.ToString();
     }
 
@@ -92,7 +126,7 @@ public static class MontyHallRender
             "└" + new string('─', interiorWidth) + "┘"
         };
 
-        // Colored center glyph (assume monospace = single cell)
+        // Colored center glyph (monospace → single cell)
         string? glyph = door.DoorKnowledge switch
         {
             DoorKnowledge.KnownWinner => Colorize(WinnerGlyph,  Yellow),
@@ -106,8 +140,8 @@ public static class MontyHallRender
             // Visual center inside the borders
             int mid = 1 + (interiorWidth / 2);
 
-            // Insert three cells "[space][glyph][space]" and purposely start 1 cell LEFT of center
-            int start = Math.Max(1, mid - 2);
+            // Insert three cells "[space][glyph][space]" and start 1 cell LEFT of center
+            int start = Math.Max(1, mid - 2) +1;
             body[2] = ReplaceNAt(body[2], start, 3, " " + glyph + " ");
         }
 
@@ -137,8 +171,6 @@ public static class MontyHallRender
     // ── Helpers ────────────────────────────────────────────────────────────────
     private static string ReplaceNAt(string line, int start, int count, string replacement)
     {
-        // Replaces exactly 'count' characters starting at 'start' with 'replacement'
-        // (Assumes 'line' has no ANSI codes before replacement; we splice the colored glyph string here.)
         var before = line.Substring(0, start);
         var after  = (start + count <= line.Length) ? line.Substring(start + count) : "";
         return before + replacement + after;
